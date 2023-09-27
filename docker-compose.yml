@@ -274,6 +274,8 @@ services:
 # https://rmoff.net/2020/06/19/how-to-install-connector-plugins-in-kafka-connect/
 # https://github.com/confluentinc/demo-scene/blob/master/kafka-connect-zero-to-hero/docker-compose.yml#L82-L87
 # https://repo1.maven.org/maven2/org/apache/plc4x/plc4j-apache-kafka/0.10.0/ https://www.youtube.com/watch?v=RWKggid25ds
+# https://github.com/apache/plc4x/blob/develop/plc4j/integrations/apache-kafka/src/test/java/org/apache/plc4x/kafka/config/SourceConfigTest.java
+# https://github.com/Kretiss/BACnet-simulator/blob/main/rooms_simulator.py
   connect:
     # image: confluentinc/cp-kafka-connect:7.5.0
     build:
