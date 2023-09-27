@@ -1,0 +1,210 @@
+version: '3.4'
+
+x-common-variables: &kafka-common-variables
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_NUM_PARTITIONS: 5
+
+services:
+  zoo1:
+    image: confluentinc/cp-zookeeper:7.4.0
+    restart: "no"
+    hostname: zoo1
+    container_name: zoo1
+    ports:
+      - 2181:2181
+    volumes:
+      - ./data/zookeeper1/data:/data
+      - ./data/zookeeper1/datalog:/datalog
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zoo1:2888:3888;zoo2:2888:3888;zoo3:2888:3888
+
+  zoo2:
+    image: confluentinc/cp-zookeeper:7.4.0
+    restart: "no"
+    hostname: zoo2
+    container_name: zoo2
+    ports:
+      - 2182:2182
+    volumes:
+      - ./data/zookeeper2/data:/data
+      - ./data/zookeeper2/datalog:/datalog
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_SERVERS: zoo1:2888:3888;zoo2:2888:3888;zoo3:2888:3888
+
+  zoo3:
+    image: confluentinc/cp-zookeeper:7.4.0
+    restart: "no"
+    hostname: zoo3
+    container_name: zoo3
+    ports:
+      - 2183:2183
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2183
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_SERVERS: zoo1:2888:3888;zoo2:2888:3888;zoo3:2888:3888
+
+  broker1:
+    image: confluentinc/cp-kafka:7.4.0
+    restart: "no"
+    hostname: broker1
+    container_name: broker1
+    user: root
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    ports:
+      - 9092:9092
+      - 29092:29092
+    volumes:
+      - ./data/kafka1/data:/var/lib/kafka/data
+    environment:
+      # <<: *kafka-common-variables
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker1:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: 'zoo1:2181,zoo2:2182,zoo3:2183'
+      KAFKA_BROKER_ID: 1
+      KAFKA_CLUSTER_ID: kafka-cluster
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      # KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    # command: |
+    #   "echo Waiting for Kafka to be ready... 
+    #    cub kafka-ready -b kafka-broker1:29092 1 60
+       
+    #    echo -e 'Creating default topics' 
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic testkfk
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic orders
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic order-validations
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic warehouse-inventory
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic customers
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic payments
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic platinum
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic gold
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic silver
+    #    kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:29092 --replication-factor 1 --partitions 2 --topic bronze
+
+    #    echo -e 'Topics was created successfully'
+    #    kafka-topics --bootstrap-server kafka-broker1:29092 --list
+    #    "
+
+  broker2:
+    image: confluentinc/cp-kafka:7.4.0
+    restart: "no"
+    hostname: broker2
+    container_name: broker2
+    user: root
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    ports:
+      - 9093:9093
+      - 29093:29093
+    volumes:
+      - ./data/kafka2/data:/var/lib/kafka/data
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker2:19093,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093,DOCKER://host.docker.internal:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo2:2182,zoo3:2183"
+      KAFKA_BROKER_ID: 2
+      KAFKA_CLUSTER_ID: kafka-cluster
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
+  broker3:
+    image: confluentinc/cp-kafka:7.4.0
+    restart: "no"
+    hostname: broker3
+    container_name: broker3
+    user: root
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    ports:
+      - 9094:9094
+      - 29094:29094
+    volumes:
+      - ./data/kafka3/data:/var/lib/kafka/data
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker3:19094,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9094,DOCKER://host.docker.internal:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo2:2182,zoo3:2183"
+      KAFKA_BROKER_ID: 3
+      KAFKA_CLUSTER_ID: kafka-cluster
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker1:19092,PLAINTEXT://broker2:19093,PLAINTEXT://broker3:19094'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  
+  # ksqldb-server:
+  #   image: confluentinc/cp-ksqldb-server:7.4.0
+  #   hostname: ksqldb-server
+  #   container_name: ksqldb-server
+  #   depends_on:
+  #     - broker1
+  #   ports:
+  #     - 8088:8088
+  #   environment:
+  #     KSQL_CONFIG_DIR: "/etc/ksql"
+  #     KSQL_BOOTSTRAP_SERVERS: "broker1:9093"
+  #     KSQL_HOST_NAME: ksqldb-server
+  #     KSQL_LISTENERS: "http://0.0.0.0:8088"
+  #     KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+  #     KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  #     KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+  #     KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+  #     # KSQL_KSQL_CONNECT_URL: "http://connect:8083"
+  #     KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
+  #     KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
+  #     KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+
+  # ksqldb-cli:
+  #   image: confluentinc/cp-ksqldb-cli:7.4.0
+  #   container_name: ksqldb-cli
+  #   depends_on:
+  #     - broker1
+  #     - ksqldb-server
+  #   entrypoint: /bin/sh
+  #   tty: true
+
+  # rest-proxy:
+  #   image: confluentinc/cp-kafka-rest:7.4.0
+  #   depends_on:
+  #     - broker1      
+  #     - schema-registry
+  #   ports:
+  #     - 8082:8082
+  #   hostname: rest-proxy
+  #   container_name: rest-proxy
+  #   environment:
+  #     KAFKA_REST_HOST_NAME: rest-proxy
+  #     KAFKA_REST_BOOTSTRAP_SERVERS: 'broker1:9093'
+  #     KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+  #     KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+  
