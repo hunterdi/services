@@ -407,5 +407,6 @@ services:
     build:
       context: .
       dockerfile: bacnet-simulator.dockerfile
+    restart: unless-stopped
     ports:
       - 47809:47809
