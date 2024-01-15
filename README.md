@@ -88,8 +88,6 @@
 # https://github.com/apache/plc4x/blob/develop/plc4j/integrations/apache-kafka/src/test/java/org/apache/plc4x/kafka/config/SourceConfigTest.java
 # https://github.com/Kretiss/BACnet-simulator/blob/main/rooms_simulator.py
 
-
-
 # https://redpanda.com/blog/ksqldb-materialized-cache
 
 # https://pathway.com/developers/tutorials/connectors/switching-to-redpanda
