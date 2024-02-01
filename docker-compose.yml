@@ -312,4 +312,11 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://redpanda-0:8081'
-
+  
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    hostname: azurite
+    restart: always
+    command: "azurite-blob --blobHost 0.0.0.0 --blobPort 20000"
+    ports:
+      - "20000:10000"
